@@ -40,7 +40,7 @@ eta = 0.5  #reflectivity
 p0 = 0.5 #probability of presence of the object
 p1 = 1 - p0
 
-l=140 #range for generating states
+l=180 #range for generating states
 dis =[]
 dis2=[]
 denc=[]
@@ -51,6 +51,10 @@ EOF2=[]
 cs=[]
 dencw=[]# Werner states
 disw=[]
+Neg=[]
+Ree=[]
+Bures=[]
+gdis=[]
 for i11 in range(-l,l+1):
     for i2 in range(-l,l+1):
         for i3 in range(-l,l+1):
@@ -75,11 +79,16 @@ for i11 in range(-l,l+1):
                 
                 #states.append( 1/4 * bb)
                 #cs.append([c1,c2,c3])
-                bb =0.25*bb   
-#------------------------------------
+                bb =0.25*bb
 
+                #eigenvalues
+                lam1=0.25*(1-c1-c2-c3) 
+                lam2=0.25*(1-c1+c2+c3)
+                lam3=0.25*(1+c1-c2+c3)
+                lam4=0.25*(1+c1+c2-c3)   
 
-# Entanglement of formation
+# Entanglement of formation------------------------------
+
                 rhotild = np.dot(np.dot(np.kron(sigmay, sigmay) ,np.conjugate(bb)) , np.kron(sigmay, sigmay))
                 
                 e1 , e2 = np.linalg.eig(np.dot(bb,rhotild))
@@ -95,8 +104,33 @@ for i11 in range(-l,l+1):
                 #else:
                     #EOF2.append(0)
                     
+# Negativity ---------------------------------------
+                    Lam = max(lam1,lam2,lam3,lam4)
 
+                    Neg.append(max(0.0, Lam - 0.5))
+# Relative entropy of entanglement------------------
 
+                    #Ree.append(1+Lam*math.log2(Lam) + (1-Lam)*math.log2(1-Lam+10**-14))
+                    if Lam > 0.5:
+                        Ree.append(
+                            1
+                            + Lam*np.log2(Lam)
+                            + (1-Lam)*np.log2(1-Lam)
+                        )
+                    else:
+                        Ree.append(0.0)
+# Bures measure------------------------------------
+
+                    if Lam > 0.5:
+                        Fmax = 0.5 + np.sqrt(Lam*(1-Lam))
+                        Bures.append(np.sqrt( 2 * (1 - np.sqrt(Fmax)) ))
+                    else:
+                        Bures.append(0.0)
+
+# Geometric discord---------------------------------
+                    Cmax2 = max(abs(c1)**2,abs(c2)**2,abs(c3)**2)
+
+                    gdis.append(0.25*(c1**2+c2**2+c3**2 - Cmax2))
 
 # Initial discord-------------------------------------
                 
@@ -164,6 +198,9 @@ for i11 in range(-l,l+1):
                     #EOF2.append(ew)
                     denc.append((p0*qqq1 - qqq2))
 
+
+
+np.savez("6-measure-heatmap.npz", dis=dis, denc=denc, EOF2=EOF2, Neg=Neg, Ree=Ree, Bures=Bures, gdis=gdis)
 
 from scipy.stats import binned_statistic_2d
 
